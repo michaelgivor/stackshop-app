@@ -1,6 +1,9 @@
+/* eslint-disable import/order */
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { ArrowLeftIcon, ShoppingBagIcon, SparklesIcon } from "lucide-react";
 import { Suspense } from "react";
+import { z } from "zod";
 import { RecommendedProducts } from "@/components/RecommendedProducts";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,19 +15,61 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProduct, getRecommendedProducts } from "@/server/products";
+import type { ProductSelect } from "@/drizzle/schema";
+
+const fetchProductById = createServerFn({ method: "GET" })
+  .inputValidator(z.uuid())
+  .handler(async ({ data: id }) => {
+    const { getProductById } = await import("@/server/products/products.actions");
+    const product = await getProductById(id);
+    return product;
+  });
+
+const fetchRecommendedProducts = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const { getRecommendedProducts } =
+      await import("@/server/products/products.actions");
+    return getRecommendedProducts();
+  },
+);
 
 export const Route = createFileRoute("/products/$id")({
   component: RouteComponent,
   loader: async ({ params }) => {
-    const product = await getProduct({ data: params.id });
-
+    // Use server functions to ensure server-only execution
+    const product = await fetchProductById({ data: params.id });
     if (!product) {
       throw notFound();
     }
-
-    const recommendedProducts = getRecommendedProducts();
+    // Return recommendedProducts as a Promise for Suspense
+    const recommendedProducts = fetchRecommendedProducts();
     return { product, recommendedProducts };
+  },
+  head: ({ loaderData: data }) => {
+    const { product } = data as {
+      product: ProductSelect;
+      recommendedProducts: Promise<Array<ProductSelect>>;
+    };
+    return {
+      meta: [
+        { name: "description", content: product.description },
+        { name: "image", content: product.image },
+        { name: "title", content: product.name },
+        {
+          name: "canonical",
+          content:
+            process.env.NODE_ENV === "production"
+              ? `https://stackshop-prod.appwrite.network/products/${product.id}`
+              : `http://localhost:3000/products/${product.id}`,
+        },
+        {
+          title: product.name,
+        },
+        {
+          description: product.description,
+        },
+      ],
+    };
   },
 });
 

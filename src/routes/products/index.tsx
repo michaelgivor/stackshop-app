@@ -3,7 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { ProductCard } from "@/components/ProductCard";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAllProducts } from "@/server/products";
+
+const fetchAllProducts = createServerFn({ method: "GET" }).handler(async () => {
+  const { getAllProducts } = await import("@/server/products/products.actions");
+  const products = await getAllProducts();
+  return products;
+});
 
 const loggerMiddleware = createMiddleware().server(async ({ next, request }) => {
   console.log(
@@ -18,7 +23,7 @@ const loggerMiddleware = createMiddleware().server(async ({ next, request }) => 
 export const Route = createFileRoute("/products/")({
   component: RouteComponent,
   loader: async () => {
-    return getAllProducts();
+    return fetchAllProducts();
   },
   server: {
     middleware: [loggerMiddleware],
@@ -35,7 +40,7 @@ function RouteComponent() {
   const products = Route.useLoaderData();
   const { data } = useQuery({
     queryKey: ["products"],
-    queryFn: () => getAllProducts(),
+    queryFn: () => fetchAllProducts(),
     initialData: products,
   });
 
