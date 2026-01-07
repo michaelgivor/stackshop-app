@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 import { Link } from "@tanstack/react-router";
 import { ShoppingBagIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { ProductSelect } from "@/drizzle/schema";
 import { cn } from "@/lib/utils";
 
 const inventoryTone = {
@@ -17,30 +19,16 @@ const inventoryTone = {
   preorder: "bg-indigo-50 text-indigo-700 border-indigo-100",
 };
 
-export function ProductCard({
-  product,
-}: {
-  product: {
-    name: string;
-    description: string;
-    price: string;
-    badge?: string;
-    rating: string;
-    reviews: number;
-    inventory: string;
-    image: string;
-    id?: string;
-  };
-}) {
+export function ProductCard({ product }: { product: ProductSelect }) {
   //   const router = useRouter();
   //   const queryClient = useQueryClient();
   return (
     <Link
       to="/products/$id"
-      params={{ id: product.id ?? "0" }}
+      params={{ id: product.id }}
       className="h-full cursor-pointer transition hover:-translate-y-1 hover:shadow-lg"
     >
-      <Card className="px-2 py-4">
+      <Card className="flex h-full flex-col px-2 py-4">
         <CardHeader className="gap-2">
           <div className="flex items-center gap-2">
             {product.badge && (
@@ -53,23 +41,21 @@ export function ProductCard({
           <CardDescription>{product.description}</CardDescription>
         </CardHeader>
 
-        <CardContent className="flex items-center justify-between">
-          <p className="flex items-center gap-2 text-sm text-slate-600">
-            <span className="font-semibold">{product.rating}</span>
-            <span className="text-slate-400">({product.reviews} reviews)</span>
-          </p>
-          <span
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-semibold",
-              inventoryTone[product.inventory as keyof typeof inventoryTone],
-            )}
-          >
-            {product.inventory === "in-stock"
-              ? "In Stock"
-              : product.inventory === "backorder"
-                ? "Backorder"
-                : "Preorder"}
-          </span>
+        <CardContent className="flex grow flex-col justify-end">
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-2 text-sm text-slate-600">
+              <span className="font-semibold">{product.rating}</span>
+              <span className="text-slate-400">({product.reviews} reviews)</span>
+            </p>
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold",
+                inventoryTone[product.inventory],
+              )}
+            >
+              {product.inventory}
+            </span>
+          </div>
         </CardContent>
         <CardFooter className="flex items-center justify-between border-t-0 bg-transparent pt-0">
           <span className="text-lg font-semibold">${product.price}</span>

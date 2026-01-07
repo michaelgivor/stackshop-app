@@ -3,10 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { ProductCard } from "@/components/ProductCard";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { sampleProducts } from "@/data/seed";
+import { getAllProducts } from "@/server/products";
 
-const fetchProducts = createServerFn({ method: "GET" }).handler(() => {
-  return sampleProducts;
+const fetchProducts = createServerFn({ method: "GET" }).handler(async () => {
+  return await getAllProducts();
 });
 
 const loggerMiddleware = createMiddleware().server(async ({ next, request }) => {

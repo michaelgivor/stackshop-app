@@ -1,4 +1,17 @@
-export const sampleProducts = [
+import type { BadgeValue, InventoryValue } from "../drizzle/schema";
+
+type SampleProduct = {
+  name: string;
+  description: string;
+  price: string;
+  badge?: BadgeValue | null;
+  rating: string;
+  reviews: number;
+  image: string;
+  inventory: InventoryValue;
+};
+
+export const sampleProducts: Array<SampleProduct> = [
   {
     name: "TanStack Router Pro",
     description:
@@ -37,6 +50,7 @@ export const sampleProducts = [
     description:
       "Full-stack React framework with file-based routing, server-side rendering, and built-in optimizations.",
     price: "199.99",
+    badge: "Featured",
     rating: "4.6",
     reviews: 156,
     image: "/tanstack-circle-logo.png",
@@ -47,6 +61,7 @@ export const sampleProducts = [
     description:
       "Headless form library with validation, async submission, and field-level control. Perfect for complex forms.",
     price: "59.99",
+    badge: "Sale",
     rating: "4.5",
     reviews: 78,
     image: "/tanstack-circle-logo.png",
@@ -57,6 +72,7 @@ export const sampleProducts = [
     description:
       "High-performance virtual scrolling for large lists. Smooth scrolling with minimal memory footprint.",
     price: "49.99",
+    badge: "Limited",
     rating: "4.4",
     reviews: 92,
     image: "/tanstack-circle-logo.png",
@@ -67,6 +83,7 @@ export const sampleProducts = [
     description:
       "Complete developer tools for debugging TanStack applications. Time-travel debugging and performance profiling.",
     price: "129.99",
+    badge: "Featured",
     rating: "4.7",
     reviews: 145,
     image: "/tanstack-circle-logo.png",
@@ -77,6 +94,7 @@ export const sampleProducts = [
     description:
       "Lightweight state management with derived state, subscriptions, and persistence. Perfect for React apps.",
     price: "39.99",
+    badge: "Sale",
     rating: "4.3",
     reviews: 67,
     image: "/tanstack-circle-logo.png",
