@@ -7,8 +7,6 @@ import { getRecommendedProducts } from "@/server/products";
 export const Route = createFileRoute("/")({
   component: App,
   loader: async () => {
-    // This runs on server during SSR AND on client during navigation
-
     const products = await getRecommendedProducts();
 
     return { products };

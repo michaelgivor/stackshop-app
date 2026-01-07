@@ -1,6 +1,7 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { ArrowLeftIcon, ShoppingBagIcon, SparklesIcon } from "lucide-react";
 import { Suspense } from "react";
+import { RecommendedProducts } from "@/components/RecommendedProducts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,18 +12,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProduct } from "@/server/products";
+import { getProduct, getRecommendedProducts } from "@/server/products";
 
 export const Route = createFileRoute("/products/$id")({
   component: RouteComponent,
   loader: async ({ params }) => {
-    const product = await getProduct(params.id);
-    return { product };
+    const product = await getProduct({ data: params.id });
+
+    if (!product) {
+      throw notFound();
+    }
+
+    const recommendedProducts = getRecommendedProducts();
+    return { product, recommendedProducts };
   },
 });
 
 function RouteComponent() {
-  const { product } = Route.useLoaderData();
+  const { product, recommendedProducts } = Route.useLoaderData();
 
   return (
     <div>
@@ -118,7 +125,7 @@ function RouteComponent() {
               </div>
             }
           >
-            {/* <RecommendedProducts recommendedProducts={recommendedProducts} /> */}
+            <RecommendedProducts recommendedProducts={recommendedProducts} />
           </Suspense>
         </div>
       </Card>

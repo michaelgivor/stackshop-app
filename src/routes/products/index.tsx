@@ -5,10 +5,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllProducts } from "@/server/products";
 
-const fetchProducts = createServerFn({ method: "GET" }).handler(async () => {
-  return await getAllProducts();
-});
-
 const loggerMiddleware = createMiddleware().server(async ({ next, request }) => {
   console.log(
     "---loggerMiddleware---",
@@ -22,7 +18,7 @@ const loggerMiddleware = createMiddleware().server(async ({ next, request }) => 
 export const Route = createFileRoute("/products/")({
   component: RouteComponent,
   loader: async () => {
-    return fetchProducts();
+    return getAllProducts();
   },
   server: {
     middleware: [loggerMiddleware],
@@ -39,7 +35,7 @@ function RouteComponent() {
   const products = Route.useLoaderData();
   const { data } = useQuery({
     queryKey: ["products"],
-    queryFn: () => fetchProducts(),
+    queryFn: () => getAllProducts(),
     initialData: products,
   });
 
