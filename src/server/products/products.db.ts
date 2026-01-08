@@ -1,5 +1,7 @@
+/* eslint-disable import/order */
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
+import type { ProductInsert } from "@/drizzle/schema";
 import { productsTable } from "@/drizzle/schema";
 
 export async function getAllDbProducts() {
@@ -19,4 +21,10 @@ export async function getDbProductById(id: string) {
     .where(eq(productsTable.id, id))
     .limit(1);
   return results;
+}
+
+export async function createDbProduct(data: ProductInsert) {
+  const result = await db.insert(productsTable).values(data).returning();
+
+  return result[0];
 }

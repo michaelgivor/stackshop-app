@@ -1,5 +1,6 @@
-import type { ProductSelect } from "@/drizzle/schema";
+import type { ProductInsert, ProductSelect } from "@/drizzle/schema";
 import {
+  createDbProduct,
   getAllDbProducts,
   getDbProductById,
   getRecommendedDbProducts,
@@ -55,6 +56,18 @@ export async function getProductById(id: string): Promise<ProductSelect | null> 
     return results[0] as ProductSelect;
   } catch (error) {
     console.error(`Error fetching product with id ${id}:`, error);
+    return null;
+  }
+}
+
+export async function createProduct(
+  data: ProductInsert,
+): Promise<ProductSelect | null> {
+  try {
+    const product = await createDbProduct(data);
+    return product;
+  } catch (error) {
+    console.error("Error creating product:", error);
     return null;
   }
 }

@@ -28,17 +28,6 @@ async function seed() {
       // Then clear products
       await db.delete(productsTable);
       console.log("   Cleared all products");
-    } else {
-      // Check if products already exist
-      const existingProducts = await db.select().from(productsTable).limit(1);
-
-      if (existingProducts.length > 0) {
-        console.log("⚠️  Data already exists in the database.");
-        console.log(
-          "   Run with --reset flag to clear and reseed: npm run db:seed -- --reset",
-        );
-        process.exit(0);
-      }
     }
 
     // Insert sample products
