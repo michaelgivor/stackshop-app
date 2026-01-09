@@ -70,7 +70,6 @@ export const productsQueryOptions = () =>
     queryFn: () => fetchAllProductsServerFn(),
     ...CACHE_TIMES.SEMI_STATIC,
     refetchOnWindowFocus: isDevelopment, // Refetch on focus in development
-    refetchInterval: isDevelopment ? 2000 : false, // Auto-refetch every 2 seconds in dev
   });
 
 export const recommendedProductsQueryOptions = () =>
@@ -79,7 +78,6 @@ export const recommendedProductsQueryOptions = () =>
     queryFn: () => fetchRecommendedProductsServerFn(),
     ...CACHE_TIMES.SEMI_STATIC,
     refetchOnWindowFocus: isDevelopment, // Refetch on focus in development
-    refetchInterval: isDevelopment ? 2000 : false, // Auto-refetch every 2 seconds in dev
   });
 
 // Future production query options (ready for implementation)
