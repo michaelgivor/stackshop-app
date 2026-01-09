@@ -1,28 +1,21 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { ArrowRightIcon } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const fetchRecommendedProducts = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { getRecommendedProducts } =
-      await import("@/server/products/products.actions");
-    const products = await getRecommendedProducts();
-    return products;
-  },
-);
+import { recommendedProductsQueryOptions } from "@/server/products/products.cache";
 
 export const Route = createFileRoute("/")({
   component: App,
-  loader: async () => {
-    // This runs on server during SSR AND on client during navigation
-    return fetchRecommendedProducts();
+  loader: async ({ context: { queryClient } }) => {
+    // Ensure data is in cache for SSR and fast client-side navigation
+    await queryClient.ensureQueryData(recommendedProductsQueryOptions());
   },
 });
 
 function App() {
-  const products = Route.useLoaderData();
+  // Get data from React Query cache with Suspense
+  const { data: products } = useSuspenseQuery(recommendedProductsQueryOptions());
 
   return (
     <div className="space-y-12 bg-linear-to-b from-slate-50 via-white to-slate-50 p-6">

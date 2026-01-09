@@ -1,14 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { createMiddleware, createServerFn } from "@tanstack/react-start";
+import { createMiddleware } from "@tanstack/react-start";
 import { ProductCard } from "@/components/ProductCard";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const fetchAllProducts = createServerFn({ method: "GET" }).handler(async () => {
-  const { getAllProducts } = await import("@/server/products/products.actions");
-  const products = await getAllProducts();
-  return products;
-});
+import { productsQueryOptions } from "@/server/products/products.cache";
 
 const loggerMiddleware = createMiddleware().server(async ({ next, request }) => {
   console.log(
@@ -22,8 +17,9 @@ const loggerMiddleware = createMiddleware().server(async ({ next, request }) => 
 
 export const Route = createFileRoute("/products/")({
   component: RouteComponent,
-  loader: async () => {
-    return fetchAllProducts();
+  loader: async ({ context: { queryClient } }) => {
+    // Ensure data is in cache for SSR and fast client-side navigation
+    await queryClient.ensureQueryData(productsQueryOptions());
   },
   server: {
     middleware: [loggerMiddleware],
@@ -37,12 +33,13 @@ export const Route = createFileRoute("/products/")({
 });
 
 function RouteComponent() {
-  const products = Route.useLoaderData();
-  const { data } = useQuery({
-    queryKey: ["products"],
-    queryFn: () => fetchAllProducts(),
-    initialData: products,
-  });
+  // Get data from React Query cache with Suspense
+  const { data } = useSuspenseQuery(productsQueryOptions());
+
+  // Sort products by createdAt (oldest first) - only for this page
+  const sortedProducts = [...data].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 
   return (
     <div className="space-y-6">
@@ -68,7 +65,7 @@ function RouteComponent() {
       </section>
       <section>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((product, index) => (
+          {sortedProducts.map((product, index) => (
             <ProductCard key={`product-${index}`} product={product} />
           ))}
         </div>

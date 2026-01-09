@@ -18,6 +18,15 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    exclude: ['postgres', 'drizzle-orm'],
+  },
+  ssr: {
+    noExternal: ['drizzle-orm'],
+  },
 })
 
 export default config

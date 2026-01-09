@@ -1,5 +1,6 @@
 /* eslint-disable import/order */
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import type {
   ProductSelect,
 } from "@/drizzle/schema";
 import { convertFormErrors } from "@/lib/helpers";
+import { productKeys } from "@/server/products/products.cache";
 
 export const Route = createFileRoute("/products/create-product")({
   component: RouteComponent,
@@ -52,6 +54,7 @@ const submitProductToServer = createServerFn({ method: "POST" })
 function RouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const form = useForm({
     defaultValues: {
       name: "",
@@ -62,13 +65,20 @@ function RouteComponent() {
       inventory: "in-stock" as InventoryValue,
     },
     onSubmit: async ({ value }) => {
-      // TODO: Implement form submission
       try {
         console.log("value", value);
-        await submitProductToServer({ data: value });
-        await router.invalidate({ sync: true });
-
-        navigate({ to: "/products" });
+        const newProduct = await submitProductToServer({ data: value });
+        
+        if (newProduct) {
+          // Invalidate React Query caches using our query key factories
+          await queryClient.invalidateQueries({ queryKey: productKeys.all });
+          await queryClient.invalidateQueries({ queryKey: productKeys.recommended() });
+          
+          // Also invalidate router cache for good measure
+          await router.invalidate({ sync: true });
+          
+          navigate({ to: "/products" });
+        }
       } catch (error) {
         console.error("Error creating product", error);
       }

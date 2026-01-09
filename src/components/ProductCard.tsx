@@ -1,4 +1,5 @@
 /* eslint-disable import/order */
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ShoppingBagIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,27 @@ const inventoryTone = {
 };
 
 export function ProductCard({ product }: { product: ProductSelect }) {
-  //   const router = useRouter();
-  //   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
+  
+  // Mutation for adding items to cart (placeholder for now)
+  const addToCartMutation = useMutation({
+    mutationFn: async (productData: { productId: string; quantity: number }) => {
+      // TODO: Implement actual cart mutation when cart functionality is added
+      console.log("Adding to cart:", productData);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return { success: true };
+    },
+    onSuccess: () => {
+      // Invalidate cart-related queries when they exist
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart-items"] });
+    },
+    onError: (error) => {
+      console.error("Failed to add to cart:", error);
+    },
+  });
+
   return (
     <Link
       to="/products/$id"
@@ -63,23 +83,17 @@ export function ProductCard({ product }: { product: ProductSelect }) {
             size="sm"
             variant={"secondary"}
             className={"bg-slate-900 text-white hover:bg-slate-800"}
+            disabled={addToCartMutation.isPending}
             onClick={e => {
               e.preventDefault();
-              console.log("add to cart");
-              //     await mutateCartFn({
-              //       data: {
-              //         action: "add",
-              //         productId: product.id,
-              //         quantity: 1,
-              //       },
-              //     });
-              //   await router.invalidate({ sync: true });
-              //   await queryClient.invalidateQueries({
-              //     queryKey: ["cart-items-data"],
-              //   });
+              addToCartMutation.mutate({
+                productId: product.id,
+                quantity: 1,
+              });
             }}
           >
-            <ShoppingBagIcon size={16} /> Add to Cart
+            <ShoppingBagIcon size={16} />
+            {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
           </Button>
         </CardFooter>
       </Card>
