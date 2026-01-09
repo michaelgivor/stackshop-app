@@ -2,7 +2,6 @@
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,30 +27,16 @@ import type {
   ProductInsert,
   ProductSelect,
 } from "@/drizzle/schema";
+import { convertFormErrors } from "@/lib/helpers";
 
 export const Route = createFileRoute("/products/create-product")({
   component: RouteComponent,
 });
 
-const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  price: z.string().refine(val => !isNaN(Number(val)), "Price must be a number"),
-  badge: z.union([z.enum(["New", "Sale", "Featured", "Limited"]), z.undefined()]),
-  rating: z.number().min(0, "Rating is required"),
-  reviews: z.number().min(0, "Reviews is required"),
-  image: z
-    .url({ message: "Image must be a valid URL" })
-    .max(512, "Image must be 512 chars or less"),
-  inventory: z.enum(["in-stock", "backorder", "preorder"]),
-});
-
 type CreateProductData = Pick<
   ProductInsert,
-  "name" | "description" | "price" | "image" | "inventory"
-> & {
-  badge?: BadgeValue;
-};
+  "name" | "description" | "price" | "image" | "inventory" | "badge"
+>;
 
 const submitProductToServer = createServerFn({ method: "POST" })
   .inputValidator((data: CreateProductData) => data)
@@ -73,23 +58,13 @@ function RouteComponent() {
       description: "",
       price: "",
       badge: undefined as BadgeValue | undefined,
-      rating: 0,
-      reviews: 0,
       image: "",
       inventory: "in-stock" as InventoryValue,
-    },
-    validators: {
-      onChange: ({ value }) => {
-        const result = productSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.issues.map(issue => issue.message).join(", ");
-        }
-        return undefined;
-      },
     },
     onSubmit: async ({ value }) => {
       // TODO: Implement form submission
       try {
+        console.log("value", value);
         await submitProductToServer({ data: value });
         await router.invalidate({ sync: true });
 
@@ -120,7 +95,13 @@ function RouteComponent() {
               }}
               className="space-y-6"
             >
-              <form.Field name="name">
+              <form.Field
+                name="name"
+                validators={{
+                  onChange: ({ value }) =>
+                    !value || value.length === 0 ? "Name is required" : undefined,
+                }}
+              >
                 {field => (
                   <div className="space-y-2">
                     <Label htmlFor={field.name}>Product Name *</Label>
@@ -133,15 +114,25 @@ function RouteComponent() {
                       placeholder="Enter product name"
                       aria-invalid={!field.state.meta.isValid}
                     />
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
 
-              <form.Field name="description">
+              <form.Field
+                name="description"
+                validators={{
+                  onChange: ({ value }) =>
+                    !value || value.length === 0
+                      ? "Description is required"
+                      : undefined,
+                }}
+              >
                 {field => (
                   <div className="space-y-2">
-                    <Label htmlFor={field.name}>Description</Label>
+                    <Label htmlFor={field.name}>Description *</Label>
                     <Textarea
                       id={field.name}
                       name={field.name}
@@ -150,15 +141,26 @@ function RouteComponent() {
                       placeholder="Enter product description"
                       aria-invalid={!field.state.meta.isValid}
                     />
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
 
-              <form.Field name="price">
+              <form.Field
+                name="price"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value || value.length === 0) return "Price is required";
+                    if (isNaN(Number(value))) return "Price must be a number";
+                    return undefined;
+                  },
+                }}
+              >
                 {field => (
                   <div className="space-y-2">
-                    <Label htmlFor={field.name}>Price</Label>
+                    <Label htmlFor={field.name}>Price *</Label>
                     <Input
                       type="number"
                       id={field.name}
@@ -169,26 +171,44 @@ function RouteComponent() {
                       placeholder="0.0"
                       aria-invalid={!field.state.meta.isValid}
                     />
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
 
-              <form.Field name="image">
+              <form.Field
+                name="image"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value || value.length === 0) return "Image URL is required";
+                    try {
+                      new URL(value);
+                      if (value.length > 512)
+                        return "Image URL must be 512 chars or less";
+                      return undefined;
+                    } catch {
+                      return "Image must be a valid URL";
+                    }
+                  },
+                }}
+              >
                 {field => (
                   <div className="space-y-2">
-                    <Label htmlFor={field.name}>Image URL</Label>
+                    <Label htmlFor={field.name}>Image URL *</Label>
                     <Input
                       type="url"
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
-                      step="0.01"
                       onChange={e => field.handleChange(e.target.value)}
                       placeholder="https://example.com/image.jpg"
                       aria-invalid={!field.state.meta.isValid}
                     />
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
@@ -216,7 +236,9 @@ function RouteComponent() {
                         <SelectItem value="Limited">Limited</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
@@ -239,22 +261,20 @@ function RouteComponent() {
                         <SelectItem value="preorder">Preorder</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FieldError errors={field.state.meta.errors} />
+                    <FieldError
+                      errors={convertFormErrors(field.state.meta.errors)}
+                    />
                   </div>
                 )}
               </form.Field>
               <form.Subscribe
-                selector={state => [
-                  state.canSubmit,
-                  state.isDirty,
-                  state.isSubmitting,
-                ]}
+                selector={state => [state.isDirty, state.isSubmitting]}
               >
-                {([canSubmit, isSubmitting]) => (
+                {([isDirty, isSubmitting]) => (
                   <div className="flex gap-4">
                     <Button
                       type="submit"
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={!isDirty || isSubmitting}
                       className="flex-1"
                     >
                       {isSubmitting ? "Creating..." : "Create Product"}

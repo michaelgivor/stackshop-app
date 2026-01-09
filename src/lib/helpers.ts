@@ -47,3 +47,22 @@ export function convertDrizzleToObjectOrNull<T>(
   }
   return data as T;
 }
+
+/**
+ * Converts TanStack React Form errors to FieldError component format.
+ * Filters out undefined values and wraps strings in message objects.
+ *
+ * @param errors - Array of error strings or undefined from TanStack React Form
+ * @returns Array of error objects compatible with FieldError component
+ *
+ * @example
+ * const fieldErrors = convertFormErrors(field.state.meta.errors);
+ * <FieldError errors={fieldErrors} />
+ */
+export function convertFormErrors(
+  errors: Array<string | undefined>,
+): Array<{ message: string }> {
+  return errors
+    .filter((error): error is string => error !== undefined)
+    .map(error => ({ message: error }));
+}
