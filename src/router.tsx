@@ -16,8 +16,6 @@ export const getRouter = () => {
             // Environment-aware defaults
             staleTime: isDevelopment ? 0 : 5 * 60 * 1000, // Dev: always fresh, Prod: 5 min
             gcTime: isDevelopment ? 5 * 60 * 1000 : 30 * 60 * 1000, // Dev: 5min, Prod: 30min
-            refetchOnWindowFocus: false, // Don't refetch on window focus
-            refetchOnReconnect: true, // Refetch when internet reconnects
             retry: (failureCount, error: any) => {
               // Don't retry 4xx client errors
               if (error?.status >= 400 && error?.status < 500) return false;

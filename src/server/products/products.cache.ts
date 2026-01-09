@@ -69,7 +69,6 @@ export const productsQueryOptions = () =>
     queryKey: ["products"] as const,
     queryFn: () => fetchAllProductsServerFn(),
     ...CACHE_TIMES.SEMI_STATIC,
-    refetchOnWindowFocus: isDevelopment, // Refetch on focus in development
   });
 
 export const recommendedProductsQueryOptions = () =>
@@ -77,7 +76,6 @@ export const recommendedProductsQueryOptions = () =>
     queryKey: ["recommended-products"] as const,
     queryFn: () => fetchRecommendedProductsServerFn(),
     ...CACHE_TIMES.SEMI_STATIC,
-    refetchOnWindowFocus: isDevelopment, // Refetch on focus in development
   });
 
 // Future production query options (ready for implementation)
@@ -117,7 +115,6 @@ export const userCartQueryOptions = (userId: string) =>
     },
     ...CACHE_TIMES.REALTIME,
     enabled: false, // Disabled until implemented
-    refetchOnWindowFocus: true, // Always refetch cart when user returns
   });
 
 // ===== QUERY KEY FACTORIES =====
