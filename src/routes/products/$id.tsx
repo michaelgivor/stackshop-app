@@ -1,8 +1,9 @@
 /* eslint-disable import/order */
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { ArrowLeftIcon, ShoppingBagIcon, SparklesIcon } from "lucide-react";
-import { Suspense } from "react";
+import { Suspense, useCallback } from "react";
 import { z } from "zod";
 import { RecommendedProducts } from "@/components/RecommendedProducts";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProductSelect } from "@/drizzle/schema";
+import { cartKeys, mutateCartServerFn } from "@/server/cart/cart.cache";
 
 const fetchProductById = createServerFn({ method: "GET" })
   .inputValidator(z.uuid())
@@ -75,6 +77,30 @@ export const Route = createFileRoute("/products/$id")({
 
 function RouteComponent() {
   const { product, recommendedProducts } = Route.useLoaderData();
+  const queryClient = useQueryClient();
+
+  // Memoize callback functions to prevent recreation on every render
+  const onSuccess = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: cartKeys.all });
+  }, [queryClient]);
+  
+  const onError = useCallback((error: Error) => {
+    console.error("Failed to add to cart:", error);
+  }, []);
+  
+  // Mutation for adding items to cart
+  const addToCartMutation = useMutation({
+    mutationFn: () => 
+      mutateCartServerFn({
+        data: {
+          action: "add",
+          productId: product.id,
+          quantity: 1,
+        },
+      }),
+    onSuccess,
+    onError,
+  });
 
   return (
     <div>
@@ -136,14 +162,15 @@ function RouteComponent() {
                 <div className="flex flex-wrap gap-3">
                   <Button
                     className="bg-slate-900 px-4 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-white dark:text-slate-900"
+                    disabled={addToCartMutation.isPending}
                     onClick={e => {
-                      console.log("add to cart");
                       e.preventDefault();
                       e.stopPropagation();
+                      addToCartMutation.mutate();
                     }}
                   >
                     <ShoppingBagIcon size={16} />
-                    Add to cart
+                    {addToCartMutation.isPending ? "Adding..." : "Add to cart"}
                   </Button>
                   <Button
                     variant="outline"

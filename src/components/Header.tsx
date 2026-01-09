@@ -1,7 +1,25 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ShoppingBag } from "lucide-react";
+import { useMemo } from "react";
+import { cartItemsQueryOptions } from "@/server/cart/cart.cache";
 
 export default function Header() {
+  const { data: cart } = useSuspenseQuery(cartItemsQueryOptions());
+
+  // Memoize expensive cart calculations to prevent re-computation on every render
+  const { itemCount, total } = useMemo(() => {
+    const count = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+    const cartTotal = cart.items.reduce(
+      (acc, item) => acc + Number(item.price) * item.quantity,
+      0,
+    );
+    const shipping = cart.items.length > 0 ? 8 : 0;
+    const totalAmount = cartTotal + shipping;
+
+    return { itemCount: count, total: totalAmount };
+  }, [cart.items]);
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -41,10 +59,10 @@ export default function Header() {
           >
             <span>Cart</span>
             <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-900 px-2 text-[11px] font-bold text-white">
-              0
+              {itemCount}
             </span>
-            <span className="tex-slate-500 hidden text-[11px] font-medium sm:inline">
-              $10
+            <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">
+              {itemCount > 0 ? `$${total.toFixed(2)}` : "Empty"}
             </span>
           </Link>
         </div>

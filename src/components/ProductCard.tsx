@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { ShoppingBagIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import type { ProductSelect } from "@/drizzle/schema";
 import { cn } from "@/lib/utils";
+import { cartKeys, mutateCartServerFn } from "@/server/cart/cart.cache";
 
 const inventoryTone = {
   "in-stock": "bg-emerald-50 text-emerald-600 border-emerald-100",
@@ -23,23 +25,27 @@ const inventoryTone = {
 export function ProductCard({ product }: { product: ProductSelect }) {
   const queryClient = useQueryClient();
   
-  // Mutation for adding items to cart (placeholder for now)
+  // Memoize callback functions to prevent recreation on every render
+  const onSuccess = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: cartKeys.all });
+  }, [queryClient]);
+  
+  const onError = useCallback((error: Error) => {
+    console.error("Failed to add to cart:", error);
+  }, []);
+  
+  // Mutation for adding items to cart
   const addToCartMutation = useMutation({
-    mutationFn: async (productData: { productId: string; quantity: number }) => {
-      // TODO: Implement actual cart mutation when cart functionality is added
-      console.log("Adding to cart:", productData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true };
-    },
-    onSuccess: () => {
-      // Invalidate cart-related queries when they exist
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      queryClient.invalidateQueries({ queryKey: ["cart-items"] });
-    },
-    onError: (error) => {
-      console.error("Failed to add to cart:", error);
-    },
+    mutationFn: (productData: { productId: string; quantity: number }) => 
+      mutateCartServerFn({
+        data: {
+          action: "add",
+          productId: productData.productId,
+          quantity: productData.quantity,
+        },
+      }),
+    onSuccess,
+    onError,
   });
 
   return (

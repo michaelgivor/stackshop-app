@@ -1,6 +1,6 @@
 /* eslint-disable import/order */
 import { useForm } from "@tanstack/react-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -53,8 +53,25 @@ const submitProductToServer = createServerFn({ method: "POST" })
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Mutation for creating products
+  const createProductMutation = useMutation({
+    mutationFn: (data: CreateProductData) => submitProductToServer({ data }),
+    onSuccess: (newProduct) => {
+      if (newProduct) {
+        // Invalidate React Query caches using our query key factories
+        queryClient.invalidateQueries({ queryKey: productKeys.all });
+        queryClient.invalidateQueries({ queryKey: productKeys.recommended() });
+        
+        navigate({ to: "/products" });
+      }
+    },
+    onError: (error) => {
+      console.error("Error creating product", error);
+      // TODO: Could show toast notification here
+    },
+  });
   const form = useForm({
     defaultValues: {
       name: "",
@@ -64,24 +81,9 @@ function RouteComponent() {
       image: "",
       inventory: "in-stock" as InventoryValue,
     },
-    onSubmit: async ({ value }) => {
-      try {
-        console.log("value", value);
-        const newProduct = await submitProductToServer({ data: value });
-        
-        if (newProduct) {
-          // Invalidate React Query caches using our query key factories
-          await queryClient.invalidateQueries({ queryKey: productKeys.all });
-          await queryClient.invalidateQueries({ queryKey: productKeys.recommended() });
-          
-          // Also invalidate router cache for good measure
-          await router.invalidate({ sync: true });
-          
-          navigate({ to: "/products" });
-        }
-      } catch (error) {
-        console.error("Error creating product", error);
-      }
+    onSubmit: ({ value }) => {
+      console.log("value", value);
+      createProductMutation.mutate(value);
     },
   });
 
@@ -277,22 +279,29 @@ function RouteComponent() {
                   </div>
                 )}
               </form.Field>
+              {createProductMutation.error && (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
+                  <p>Failed to create product. Please try again.</p>
+                </div>
+              )}
+              
               <form.Subscribe
-                selector={state => [state.isDirty, state.isSubmitting]}
+                selector={state => [state.isDirty]}
               >
-                {([isDirty, isSubmitting]) => (
+                {([isDirty]) => (
                   <div className="flex gap-4">
                     <Button
                       type="submit"
-                      disabled={!isDirty || isSubmitting}
+                      disabled={!isDirty || createProductMutation.isPending}
                       className="flex-1"
                     >
-                      {isSubmitting ? "Creating..." : "Create Product"}
+                      {createProductMutation.isPending ? "Creating..." : "Create Product"}
                     </Button>
                     <Button
                       type="button"
                       variant={"outline"}
                       onClick={() => navigate({ to: "/products" })}
+                      disabled={createProductMutation.isPending}
                     >
                       Cancel
                     </Button>

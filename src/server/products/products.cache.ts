@@ -47,19 +47,6 @@ export const productDetailQueryOptions = (productId: string) =>
     queryFn: () => fetchProductByIdServerFn({ data: productId }),
   });
 
-// User cart
-export const userCartQueryOptions = (userId: string) =>
-  queryOptions({
-    queryKey: ["user", userId, "cart"] as const,
-    queryFn: () => {
-      // TODO: Implement when needed
-      throw new Error(`Cart query for user ${userId} not implemented yet`);
-    },
-    enabled: false, // Disabled until implemented
-  });
-
-// Future query options (add as needed)
-
 // ===== QUERY KEY FACTORIES =====
 // Centralized query key management for cache invalidation
 
