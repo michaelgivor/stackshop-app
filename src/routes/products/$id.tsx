@@ -163,8 +163,8 @@ function RouteComponent() {
               <div>
                 <h2 className="my-4 text-2xl font-bold">Recommended Products</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <Skeleton key={index} className="h-48 w-full" />
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} className="h-64 w-full" />
                   ))}
                 </div>
               </div>
