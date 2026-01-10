@@ -1,5 +1,5 @@
 /* eslint-disable import/consistent-type-specifier-style */
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import Header from "@/components/Header";
+import { client } from "@/lib/appwrite";
 import appCss from "@/styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -43,6 +44,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext();
+
+  // Ping Appwrite backend to verify setup
+  useEffect(() => {
+    client.ping().then(() => {
+      console.log("✅ Appwrite connection verified");
+    }).catch((error) => {
+      console.error("❌ Appwrite connection failed:", error);
+    });
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
